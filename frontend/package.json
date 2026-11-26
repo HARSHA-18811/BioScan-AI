@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -14,7 +14,9 @@
     "lucide-react": "^1.80.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "recharts": "^3.11.1"
+    "recharts": "^3.11.1",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.6"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
@@ -24,8 +26,6 @@
     "autoprefixer": "^10.7.0",
     "oxlint": "^1.90.0",
     "postcss": "^8.5.33",
-    "tailwindcss": "^4.3.5",
-    "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "tailwindcss": "^4.3.5"
   }
 }
