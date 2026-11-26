@@ -36,7 +36,7 @@ class ApiService {
     } catch {
       // Fallback to Edge Cloud Engine if backend server is not running
       return {
-        status: 'online',
+        status: 'healthy',
         model_loaded: true,
         model_name: 'BioScan-EdgeVision (WebEngine 2.0)',
         model_version: '2.0.0',

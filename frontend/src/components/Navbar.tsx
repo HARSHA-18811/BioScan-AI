@@ -94,13 +94,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center space-x-3">
             <div className="hidden sm:flex items-center space-x-2 text-xs px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800">
               <span className={`w-2 h-2 rounded-full ${
-                health?.status === 'healthy' 
+                health?.status === 'healthy' || health?.status === 'online'
                   ? health.model_loaded ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
                   : 'bg-rose-500'
               }`} />
               <span className="text-slate-300 font-mono">
-                {health?.status === 'healthy'
-                  ? health.model_loaded ? 'Model Ready' : 'Model Unloaded'
+                {health?.status === 'healthy' || health?.status === 'online'
+                  ? health.model_loaded ? (health.environment?.includes('Vercel') ? 'Edge Engine Ready' : 'Model Ready') : 'Model Unloaded'
                   : 'Backend Offline'}
               </span>
             </div>
