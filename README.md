@@ -1,5 +1,11 @@
 # BioScan AI – AI-Based Biological Foliar Image Analysis
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-HARSHA--18811%2FBioScan--AI-blue?logo=github)](https://github.com/HARSHA-18811/BioScan-AI)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/HARSHA-18811/BioScan-AI)
+
+- **Official GitHub Repository:** [https://github.com/HARSHA-18811/BioScan-AI](https://github.com/HARSHA-18811/BioScan-AI)
+- **Live Vercel Web Deployment:** [https://rapid-birch-14hgmmc.tmp.now](https://rapid-birch-14hgmmc.tmp.now) (or connect directly via Vercel GitHub Integration)
+
 An academic experiential-learning and research-oriented web application exploring the application of deep convolutional neural networks (CNNs) to biological foliar pathology and botanical disease classification.
 
 ---
