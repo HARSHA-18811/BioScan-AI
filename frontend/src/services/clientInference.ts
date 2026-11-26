@@ -730,11 +730,150 @@ export function clientSideGetMetrics(): EvaluationMetrics {
 }
 
 /**
+ * Botanical Leaf Presence Verification
+ * Validates whether the uploaded file represents genuine plant foliage or leaves.
+ * Analyzes file keywords and samples pixels via HTML5 Canvas for foliar chromaticity.
+ */
+export async function verifyImageIsLeaf(file: File): Promise<{ isLeaf: boolean; reason?: string }> {
+  const filename = file.name.toLowerCase();
+
+  // 1. Keyword check for obvious non-botanical objects
+  const nonLeafKeywords = [
+    'cat', 'dog', 'pet', 'animal', 'car', 'vehicle', 'bike', 'bus', 'truck',
+    'person', 'human', 'face', 'selfie', 'man', 'woman', 'child', 'portrait',
+    'shoe', 'shirt', 'clothing', 'building', 'house', 'room', 'laptop', 'phone',
+    'computer', 'screen', 'keyboard', 'document', 'receipt', 'furniture', 'table', 'chair'
+  ];
+  for (const kw of nonLeafKeywords) {
+    if (filename.includes(kw)) {
+      return {
+        isLeaf: false,
+        reason: "No plant leaf detected in the image. Please re-upload an image containing a clear plant leaf."
+      };
+    }
+  }
+
+  // 2. Browser Canvas foliar chromaticity & chlorophyll index sampling
+  if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+    try {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      
+      const loaded = await new Promise<boolean>((resolve) => {
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = objectUrl;
+      });
+
+      if (loaded) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, 100, 100);
+          const imgData = ctx.getImageData(0, 0, 100, 100);
+          const data = imgData.data;
+
+          let foliarPixels = 0;
+          let totalSampled = 0;
+          let skinTonePixels = 0;
+          let bluePixels = 0;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            if (a < 50) continue; // transparent pixel
+
+            totalSampled++;
+
+            // Excess Green Index (ExG): 2*G - R - B
+            const exg = 2 * g - r - b;
+
+            // Foliar chlorophyll green
+            const isGreenLeaf = (g > r * 1.05 && g > b * 1.1 && g > 35) || (exg > 15 && g > 40);
+
+            // Chlorotic / yellowish diseased foliage with strong blue absorption
+            const isChloroticLeaf = (r > 60 && g > 60 && b < r * 0.55 && g > b * 1.35 && Math.abs(r - g) < 50);
+
+            // Necrotic foliar brown lesion
+            const isNecroticLeaf = (r > 40 && g > 30 && b < 40 && r > b * 1.3 && g > b * 1.1 && g > r * 0.6);
+
+            if (isGreenLeaf || isChloroticLeaf || isNecroticLeaf) {
+              foliarPixels++;
+            }
+
+            // Human skin tone detection (R > G > B, significant difference)
+            if (r > 95 && g > 40 && b > 20 && r > g && g > b && (r - g) > 15 && (r - b) > 15) {
+              skinTonePixels++;
+            }
+
+            // Sky / blue object detection
+            if (b > r * 1.3 && b > g * 1.2 && b > 80) {
+              bluePixels++;
+            }
+          }
+
+          URL.revokeObjectURL(objectUrl);
+
+          if (totalSampled > 0) {
+            const foliarRatio = foliarPixels / totalSampled;
+            const skinRatio = skinTonePixels / totalSampled;
+            const blueRatio = bluePixels / totalSampled;
+
+            // High skin tones
+            if (skinRatio > 0.30) {
+              return {
+                isLeaf: false,
+                reason: "No plant leaf detected in the image (human/skin tone detected). Please re-upload an image containing a clear plant leaf."
+              };
+            }
+
+            // High blue (sky/clothing/electronics)
+            if (blueRatio > 0.45 && foliarRatio < 0.12) {
+              return {
+                isLeaf: false,
+                reason: "No plant leaf detected in the image (non-botanical subject detected). Please re-upload an image containing a clear plant leaf."
+              };
+            }
+
+            // A legitimate leaf image must have at least 6% foliar pixels
+            if (foliarRatio < 0.06) {
+              return {
+                isLeaf: false,
+                reason: "No plant leaf detected in the image. Please re-upload an image containing a clear plant leaf."
+              };
+            }
+          }
+        } else {
+          URL.revokeObjectURL(objectUrl);
+        }
+      } else {
+        URL.revokeObjectURL(objectUrl);
+      }
+    } catch (e) {
+      console.warn("Foliar presence canvas validation skipped:", e);
+    }
+  }
+
+  return { isLeaf: true };
+}
+
+/**
  * Client-Side In-Browser Botanical Inference Engine
  * Evaluates foliage images via botanical heuristic analysis, morphology matching,
  * and pathology assessment directly in the user's browser.
  */
 export async function clientSidePredict(file: File): Promise<AnalysisResponse> {
+  // 0. Botanical leaf presence verification gate
+  const verification = await verifyImageIsLeaf(file);
+  if (!verification.isLeaf) {
+    throw new Error(verification.reason || "No plant leaf detected in the image. Please re-upload an image containing a clear plant leaf.");
+  }
+
   const filename = file.name.toLowerCase();
 
   // 1. Botanical species detection

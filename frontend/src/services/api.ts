@@ -10,7 +10,8 @@ import {
   clientSidePredict,
   clientSideGetHistory,
   clientSideClearHistory,
-  clientSideGetMetrics
+  clientSideGetMetrics,
+  verifyImageIsLeaf
 } from './clientInference';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -63,6 +64,12 @@ class ApiService {
   }
 
   async predictImage(file: File): Promise<AnalysisResponse> {
+    // 0. Immediate in-browser leaf presence verification
+    const leafCheck = await verifyImageIsLeaf(file);
+    if (!leafCheck.isLeaf) {
+      throw new Error(leafCheck.reason || "No plant leaf detected in the image. Please re-upload an image containing a clear plant leaf.");
+    }
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -87,6 +94,10 @@ class ApiService {
 
       return await response.json();
     } catch (err: any) {
+      // If validation explicitly rejected image as non-leaf, propagate immediately
+      if (err?.message?.includes("No plant leaf detected")) {
+        throw err;
+      }
       console.warn('Backend inference unavailable or failed, utilizing BioScan Edge Engine:', err?.message);
       // Seamlessly fall back to client-side botanical inference engine
       return await clientSidePredict(file);

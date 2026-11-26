@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
 from ..config import settings
 from ..schemas.analysis import AnalysisResponse, PredictionItem
-from ..services.preprocessing import validate_image_bytes
+from ..services.preprocessing import validate_image_bytes, verify_leaf_presence
 from ..services.plant_knowledge import parse_class_name
 from ..database.database import save_analysis
 from ml.predict import predictor_instance
@@ -45,6 +45,14 @@ async def predict_foliar_disease(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=error_msg
+        )
+
+    # 2b. Botanical Leaf Presence Verification
+    is_leaf, leaf_msg = verify_leaf_presence(pil_img, filename=file.filename)
+    if not is_leaf:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=leaf_msg
         )
 
     # 3. Verify Model Availability

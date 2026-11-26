@@ -249,9 +249,25 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start space-x-3 text-xs text-rose-200">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <p>{errorMessage}</p>
+              <div className={`p-4 rounded-2xl flex items-start space-x-3.5 text-xs border transition-all ${
+                errorMessage.includes('No plant leaf detected')
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-200 shadow-lg shadow-amber-500/5'
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-200'
+              }`}>
+                <AlertTriangle className={`w-5 h-5 shrink-0 mt-0.5 ${
+                  errorMessage.includes('No plant leaf detected') ? 'text-amber-400' : 'text-rose-400'
+                }`} />
+                <div className="space-y-1">
+                  <div className="font-semibold text-sm">
+                    {errorMessage.includes('No plant leaf detected') ? 'Specimen Verification Warning' : 'Inference Notice'}
+                  </div>
+                  <p className="leading-relaxed">{errorMessage}</p>
+                  {errorMessage.includes('No plant leaf detected') && (
+                    <div className="pt-1 text-[11px] text-amber-300/80 font-mono">
+                      🍃 Tip: Please take or upload a clear, well-lit photo of a plant leaf or foliar tissue.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
